@@ -1,0 +1,4 @@
+# Backend-only dependencies
+# Note: Install main project dependencies first from project root!
+Flask>=3.0
+Flask-CORS>=4.0
