@@ -7,9 +7,77 @@ import './AnalysisResults.css'
 interface AnalysisResultsProps {
   result: AnalysisResult
   onNewAnalysis: () => void
+  uiLanguage: 'Chinese' | 'English'
 }
 
 type TabKey = 'overview' | 'market' | 'fundamentals' | 'news' | 'risk' | 'investment_plan' | 'trader_plan' | 'risk_debate' | 'final_decision'
+
+const translations = {
+  Chinese: {
+    analysisReport: '分析报告',
+    newAnalysis: '发起新分析',
+    investmentDecision: '投资决策',
+    marketAnalysis: '市场分析',
+    fundamentals: '基本面',
+    news: '新闻',
+    riskAssessment: '风险评估',
+    researchTeam: '研究团队决策',
+    traderPlan: '交易团队计划',
+    riskTeam: '风险管理团队',
+    finalDecision: '最终交易决策',
+    targetPrice: '目标价',
+    confidence: '置信度',
+    riskScore: '风险评分',
+    decisionReasoning: '决策理由',
+    loadingChart: '正在加载市场数据...',
+    noChartData: '暂无历史价格数据可供展示',
+    chartError: '请检查股票代码是否正确，或确认Finnhub API密钥配置',
+    failed: '分析失败',
+    unavailable: '分析结果不可用',
+    unknownError: '未知错误',
+    chartTitle: '30天历史价格走势 (Finnhub实时数据)',
+    marketTechAnalysis: '市场技术分析',
+    fundamentalsAnalysis: '基本面分析',
+    newsAnalysis: '新闻分析',
+    riskAnalysis: '风险评估',
+    researchTeamDecision: '研究团队决策',
+    traderTeamPlan: '交易团队计划',
+    riskMgmtTeam: '风险管理团队决策',
+    finalTradeDecision: '最终交易决策',
+  },
+  English: {
+    analysisReport: 'Analysis Report',
+    newAnalysis: 'New Analysis',
+    investmentDecision: 'Investment Decision',
+    marketAnalysis: 'Market Analysis',
+    fundamentals: 'Fundamentals',
+    news: 'News',
+    riskAssessment: 'Risk Assessment',
+    researchTeam: 'Research Team Decision',
+    traderPlan: 'Trader Team Plan',
+    riskTeam: 'Risk Mgmt Team',
+    finalDecision: 'Final Trade Decision',
+    targetPrice: 'Target Price',
+    confidence: 'Confidence',
+    riskScore: 'Risk Score',
+    decisionReasoning: 'Decision Reasoning',
+    loadingChart: 'Loading market data...',
+    noChartData: 'No historical price data available',
+    chartError: 'Check stock symbol or Finnhub API key configuration',
+    failed: 'Analysis Failed',
+    unavailable: 'Analysis Result Unavailable',
+    unknownError: 'Unknown Error',
+    chartTitle: '30-Day Price History (Finnhub Real-time)',
+    marketTechAnalysis: 'Market Technical Analysis',
+    fundamentalsAnalysis: 'Fundamental Analysis',
+    newsAnalysis: 'News Analysis',
+    riskAnalysis: 'Risk Assessment',
+    researchTeamDecision: 'Research Team Decision',
+    traderTeamPlan: 'Trader Team Plan',
+    riskMgmtTeam: 'Risk Management Team Decision',
+    finalTradeDecision: 'Final Trade Decision',
+  }
+}
 
 // Helper to format report text with markdown-like styling
 function FormattedReport({ text }: { text: string }) {
@@ -46,26 +114,11 @@ function FormattedReport({ text }: { text: string }) {
   )
 }
 
-// Helper to convert market data to chart format
-function convertMarketDataToChartFormat(marketData: Array<{
-  date: string
-  open?: number
-  high?: number
-  low?: number
-  close: number
-  volume?: number
-}>) {
-  return marketData.map(d => ({
-    date: d.date,
-    price: d.close, // Use closing price for the chart
-    volume: d.volume
-  }))
-}
-
-export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps) {
+export function AnalysisResults({ result, onNewAnalysis, uiLanguage }: AnalysisResultsProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [marketChartData, setMarketChartData] = useState<Array<{ date: string; price: number; volume?: number }>>([])
   const [isLoadingChart, setIsLoadingChart] = useState(false)
+  const t = translations[uiLanguage]
 
   // Fetch real market data from Finnhub when component mounts
   useEffect(() => {
@@ -90,7 +143,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
   if (!result.result) {
     return (
       <div className="results-container">
-        <div className="result-banner error">分析结果不可用</div>
+        <div className="result-banner error">{t.unavailable}</div>
       </div>
     )
   }
@@ -101,11 +154,11 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
     return (
       <div className="results-container">
         <div className="result-banner error">
-          <h3>❌ 分析失败</h3>
-          <p>{data.error || '未知错误'}</p>
+          <h3>❌ {t.failed}</h3>
+          <p>{data.error || t.unknownError}</p>
         </div>
         <button onClick={onNewAnalysis} className="new-analysis-btn">
-          发起新分析
+          {t.newAnalysis}
         </button>
       </div>
     )
@@ -122,34 +175,34 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
   const actionColor = getActionColor(data.action)
 
   const tabs = [
-    { key: 'overview' as TabKey, label: '📊 投资决策', icon: '📊' },
-    { key: 'market' as TabKey, label: '📈 市场分析', icon: '📈', hasData: !!data.market_report },
-    { key: 'fundamentals' as TabKey, label: '💰 基本面', icon: '💰', hasData: !!data.fundamentals_report },
-    { key: 'news' as TabKey, label: '📰 新闻', icon: '📰', hasData: !!data.news_report },
-    { key: 'risk' as TabKey, label: '⚠️ 风险评估', icon: '⚠️', hasData: !!data.risk_assessment },
-    { key: 'investment_plan' as TabKey, label: '🔎 研究团队决策', icon: '🔎', hasData: !!data.investment_debate_state },
-    { key: 'trader_plan' as TabKey, label: '💼 交易团队计划', icon: '💼', hasData: !!data.trader_investment_plan },
-    { key: 'risk_debate' as TabKey, label: '🔥 风险管理团队', icon: '🔥', hasData: !!data.risk_debate_state },
-    { key: 'final_decision' as TabKey, label: '🎯 最终交易决策', icon: '🎯', hasData: !!data.final_trade_decision },
+    { key: 'overview' as TabKey, label: `📊 ${t.investmentDecision}`, icon: '📊' },
+    { key: 'market' as TabKey, label: `📈 ${t.marketAnalysis}`, icon: '📈', hasData: !!data.market_report },
+    { key: 'fundamentals' as TabKey, label: `💰 ${t.fundamentals}`, icon: '💰', hasData: !!data.fundamentals_report },
+    { key: 'news' as TabKey, label: `📰 ${t.news}`, icon: '📰', hasData: !!data.news_report },
+    { key: 'risk' as TabKey, label: `⚠️ ${t.riskAssessment}`, icon: '⚠️', hasData: !!data.risk_assessment },
+    { key: 'investment_plan' as TabKey, label: `🔎 ${t.researchTeam}`, icon: '🔎', hasData: !!data.investment_debate_state },
+    { key: 'trader_plan' as TabKey, label: `💼 ${t.traderPlan}`, icon: '💼', hasData: !!data.trader_investment_plan },
+    { key: 'risk_debate' as TabKey, label: `🔥 ${t.riskTeam}`, icon: '🔥', hasData: !!data.risk_debate_state },
+    { key: 'final_decision' as TabKey, label: `🎯 ${t.finalDecision}`, icon: '🎯', hasData: !!data.final_trade_decision },
   ]
 
   return (
     <div className="results-container">
       <div className="results-header">
         <div className="header-left">
-          <h2>📊 分析报告</h2>
+          <h2>📊 {t.analysisReport}</h2>
           <div className="stock-info-inline">
             <span className="info-badge">{result.symbol}</span>
             <span className="info-badge">{result.market}</span>
             <span className="info-badge">
               {result.completed_at
-                ? new Date(result.completed_at).toLocaleTimeString('zh-CN')
+                ? new Date(result.completed_at).toLocaleTimeString(uiLanguage === 'Chinese' ? 'zh-CN' : 'en-US')
                 : ''}
             </span>
           </div>
         </div>
         <button onClick={onNewAnalysis} className="new-analysis-btn">
-          发起新分析
+          {t.newAnalysis}
         </button>
       </div>
 
@@ -175,13 +228,13 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'overview' && (
           <div className="tab-pane">
             <div className={`decision-card ${actionColor}`}>
-              <h3>🎯 投资决策</h3>
+              <h3>🎯 {t.investmentDecision}</h3>
               <div className="decision-main">
                 <div className="decision-action">{data.action || 'N/A'}</div>
                 <div className="decision-details">
                   {data.target_price && (
                     <div className="detail-item">
-                      <span className="detail-label">目标价：</span>
+                      <span className="detail-label">{t.targetPrice}：</span>
                       <span className="detail-value">
                         {typeof data.target_price === 'number'
                           ? `$${data.target_price.toFixed(2)}`
@@ -191,13 +244,13 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
                   )}
                   {data.confidence !== undefined && (
                     <div className="detail-item">
-                      <span className="detail-label">置信度：</span>
+                      <span className="detail-label">{t.confidence}：</span>
                       <span className="detail-value">{(data.confidence * 100).toFixed(0)}%</span>
                     </div>
                   )}
                   {data.risk_score !== undefined && (
                     <div className="detail-item">
-                      <span className="detail-label">风险评分：</span>
+                      <span className="detail-label">{t.riskScore}：</span>
                       <span className="detail-value">{(data.risk_score * 100).toFixed(0)}%</span>
                     </div>
                   )}
@@ -205,7 +258,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
               </div>
               {data.reasoning && (
                 <div className="decision-reasoning">
-                  <strong>决策理由：</strong>
+                  <strong>{t.decisionReasoning}：</strong>
                   <FormattedReport text={data.reasoning} />
                 </div>
               )}
@@ -217,23 +270,23 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
           <div className="tab-pane">
             {isLoadingChart ? (
               <div className="chart-empty">
-                <p>📊 正在加载市场数据...</p>
+                <p>📊 {t.loadingChart}</p>
               </div>
             ) : marketChartData.length > 0 ? (
               <PriceChart
                 data={marketChartData}
-                title={`${result.symbol} 30天历史价格走势 (Finnhub实时数据)`}
+                title={`${result.symbol} ${t.chartTitle}`}
               />
             ) : (
               <div className="chart-empty">
-                <p>📊 暂无历史价格数据可供展示</p>
+                <p>📊 {t.noChartData}</p>
                 <p style={{ fontSize: '0.85rem', color: '#5a7a96', marginTop: '0.5rem' }}>
-                  请检查股票代码是否正确，或确认Finnhub API密钥配置
+                  {t.chartError}
                 </p>
               </div>
             )}
             <div className="report-section">
-              <h3>📈 市场技术分析</h3>
+              <h3>📈 {t.marketTechAnalysis}</h3>
               <div className="report-content">
                 <FormattedReport text={data.market_report} />
               </div>
@@ -244,7 +297,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'fundamentals' && data.fundamentals_report && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>💰 基本面分析</h3>
+              <h3>💰 {t.fundamentalsAnalysis}</h3>
               <div className="report-content">
                 <FormattedReport text={data.fundamentals_report} />
               </div>
@@ -255,7 +308,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'news' && data.news_report && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>📰 新闻分析</h3>
+              <h3>📰 {t.newsAnalysis}</h3>
               <div className="report-content">
                 <FormattedReport text={data.news_report} />
               </div>
@@ -266,7 +319,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'risk' && data.risk_assessment && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>⚠️ 风险评估</h3>
+              <h3>⚠️ {t.riskAnalysis}</h3>
               <div className="report-content">
                 <FormattedReport text={data.risk_assessment} />
               </div>
@@ -277,7 +330,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'investment_plan' && data.investment_debate_state && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>🔎 研究团队决策</h3>
+              <h3>🔎 {t.researchTeamDecision}</h3>
               <div className="report-content">
                 <FormattedReport text={data.investment_debate_state} />
               </div>
@@ -288,7 +341,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'trader_plan' && data.trader_investment_plan && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>💼 交易团队计划</h3>
+              <h3>💼 {t.traderTeamPlan}</h3>
               <div className="report-content">
                 <FormattedReport text={data.trader_investment_plan} />
               </div>
@@ -299,7 +352,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'risk_debate' && data.risk_debate_state && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>🔥 风险管理团队决策</h3>
+              <h3>🔥 {t.riskMgmtTeam}</h3>
               <div className="report-content">
                 <FormattedReport text={data.risk_debate_state} />
               </div>
@@ -310,7 +363,7 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
         {activeTab === 'final_decision' && data.final_trade_decision && (
           <div className="tab-pane">
             <div className="report-section">
-              <h3>🎯 最终交易决策</h3>
+              <h3>🎯 {t.finalTradeDecision}</h3>
               <div className="report-content">
                 <FormattedReport text={data.final_trade_decision} />
               </div>
@@ -321,4 +374,3 @@ export function AnalysisResults({ result, onNewAnalysis }: AnalysisResultsProps)
     </div>
   )
 }
-

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
-import { createAnalysis, getHealth, getAnalysisStatus, getAnalysisResult } from './lib/api'
+import { createAnalysis, getAnalysisStatus, getAnalysisResult } from './lib/api'
 import type { AnalysisResult, AnalysisStatus } from './lib/api'
 import { AnalysisResults } from './components/AnalysisResults'
 
@@ -16,20 +16,85 @@ const defaultForm = {
   analysisDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
 }
 
+type Language = 'Chinese' | 'English'
+
+const translations = {
+  Chinese: {
+    title: 'AI 股票分析助手',
+    startAnalysis: '发起新的股票分析',
+    symbol: '股票代码',
+    market: '市场',
+    analysisDate: '分析日期',
+    researchDepth: '研究深度',
+    llmProvider: 'LLM 提供商',
+    includeRisk: '包含风险评估（多角度风险分析）',
+    includeSentiment: '包含市场情绪评估（Social Analysis）',
+    includeNews: '包含新闻分析（News Analysis）',
+    submit: '提交分析请求',
+    submitting: '分析中...',
+    status: '状态',
+    startedAt: '开始时间',
+    queued: '排队中',
+    running: '分析中',
+    failed: '失败',
+    completed: '完成',
+    depthOptions: {
+      1: '1级 (2-4分钟): 快速概览，基础技术指标',
+      2: '2级 (4-6分钟): 标准分析，技术+基本面',
+      3: '3级 (6-10分钟): 深度分析，推荐',
+      4: '4级 (10-15分钟): 全面分析，多轮智能体辩论',
+    },
+    marketOptions: {
+      '美股': '美股',
+      'A股': 'A股',
+      '港股': '港股',
+    },
+    language: '语言 (Language)'
+  },
+  English: {
+    title: 'AI Stock Analysis Assistant',
+    startAnalysis: 'Start New Stock Analysis',
+    symbol: 'Stock Symbol',
+    market: 'Market',
+    analysisDate: 'Analysis Date',
+    researchDepth: 'Research Depth',
+    llmProvider: 'LLM Provider',
+    includeRisk: 'Include Risk Assessment (Multi-angle Risk Analysis)',
+    includeSentiment: 'Include Sentiment Analysis (Social Analysis)',
+    includeNews: 'Include News Analysis',
+    submit: 'Submit Analysis Request',
+    submitting: 'Analyzing...',
+    status: 'Status',
+    startedAt: 'Started At',
+    queued: 'Queued',
+    running: 'Running',
+    failed: 'Failed',
+    completed: 'Completed',
+    depthOptions: {
+      1: 'Level 1 (2-4 min): Quick Overview, Basic Technicals',
+      2: 'Level 2 (4-6 min): Standard Analysis, Technical + Fundamental',
+      3: 'Level 3 (6-10 min): Deep Analysis, Recommendation',
+      4: 'Level 4 (10-15 min): Comprehensive, Multi-Round Debate',
+    },
+    marketOptions: {
+      '美股': 'US Market',
+      'A股': 'A-Share',
+      '港股': 'HK Market',
+    },
+    language: 'Language (语言)'
+  }
+}
+
 function App() {
-  const [health, setHealth] = useState<string>('Checking backend...')
   const [form, setForm] = useState(defaultForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [analysisId, setAnalysisId] = useState<string | null>(null)
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus | null>(null)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [uiLanguage, setUiLanguage] = useState<Language>('Chinese')
 
-  useEffect(() => {
-    getHealth()
-      .then((response) => setHealth(`✅ Backend ready (${response.service})`))
-      .catch((err) => setHealth(`⚠️ Backend unavailable: ${err.message}`))
-  }, [])
+  const t = translations[uiLanguage]
 
   // Poll for analysis status
   useEffect(() => {
@@ -53,7 +118,7 @@ function App() {
             setIsSubmitting(false)
           }
         } else if (status.status === 'failed') {
-          setError(status.error || '分析失败')
+          setError(status.error || t.failed)
           setIsSubmitting(false)
         } else {
           // Continue polling
@@ -72,7 +137,7 @@ function App() {
     return () => {
       isCancelled = true
     }
-  }, [analysisId])
+  }, [analysisId, t.failed])
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = event.target
@@ -85,6 +150,10 @@ function App() {
       ...prev,
       [name]: type === 'checkbox' ? checked : name === 'researchDepth' ? Number(finalValue) : finalValue,
     }))
+  }
+
+  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setUiLanguage(event.target.value as Language)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -141,10 +210,22 @@ function App() {
     return (
       <div className="app-container">
         <header className="app-header">
-          <h1 style={{ textAlign: 'center', width: '100%' }}>AI 股票分析助手</h1>
+          <div className="header-content">
+            <h1>{t.title}</h1>
+            <div className="language-selector">
+              <select value={uiLanguage} onChange={handleLanguageChange}>
+                <option value="Chinese">中文 (Chinese)</option>
+                <option value="English">English</option>
+              </select>
+            </div>
+          </div>
         </header>
         <main>
-          <AnalysisResults result={analysisResult} onNewAnalysis={handleNewAnalysis} />
+          <AnalysisResults 
+            result={analysisResult} 
+            onNewAnalysis={handleNewAnalysis} 
+            uiLanguage={uiLanguage}
+          />
         </main>
       </div>
     )
@@ -153,15 +234,23 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1 style={{ textAlign: 'center', width: '100%' }}>AI 股票分析助手</h1>
+        <div className="header-content">
+          <h1>{t.title}</h1>
+          <div className="language-selector">
+            <select value={uiLanguage} onChange={handleLanguageChange}>
+              <option value="Chinese">中文 (Chinese)</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+        </div>
       </header>
 
       <main>
         <section className="card">
-          <h2>发起新的股票分析</h2>
+          <h2>{t.startAnalysis}</h2>
           <form onSubmit={handleSubmit} className="analysis-form">
             <label>
-              股票代码
+              {t.symbol}
               <input
                 name="symbol"
                 value={form.symbol}
@@ -173,16 +262,16 @@ function App() {
             </label>
 
             <label>
-              市场
+              {t.market}
               <select name="market" value={form.market} onChange={handleChange} disabled={isSubmitting}>
-                <option value="美股">美股</option>
-                <option value="A股">A股</option>
-                <option value="港股">港股</option>
+                <option value="美股">{t.marketOptions['美股']}</option>
+                <option value={1}>{t.marketOptions['A股']}</option>
+                <option value={2}>{t.marketOptions['港股']}</option>
               </select>
             </label>
 
             <label>
-              分析日期
+              {t.analysisDate}
               <input
                 type="date"
                 name="analysisDate"
@@ -194,17 +283,17 @@ function App() {
             </label>
 
             <label>
-              研究深度
+              {t.researchDepth}
               <select name="researchDepth" value={form.researchDepth} onChange={handleChange} disabled={isSubmitting}>
-                <option value={1}>1级 (2-4分钟): 快速概览，基础技术指标</option>
-                <option value={2}>2级 (4-6分钟): 标准分析，技术+基本面</option>
-                <option value={3}>3级 (6-10分钟): 深度分析，推荐</option>
-                <option value={4}>4级 (10-15分钟): 全面分析，多轮智能体辩论</option>
+                <option value={1}>{t.depthOptions[1]}</option>
+                <option value={2}>{t.depthOptions[2]}</option>
+                <option value={3}>{t.depthOptions[3]}</option>
+                <option value={4}>{t.depthOptions[4]}</option>
               </select>
             </label>
 
             <label>
-              LLM 提供商
+              {t.llmProvider}
               <select name="llmProvider" value={form.llmProvider} onChange={handleChange} disabled={isSubmitting}>
                 <option value="google">Google Gemini</option>
                 <option value="dashscope">阿里百炼</option>
@@ -222,7 +311,7 @@ function App() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                 />
-                <span>包含风险评估（多角度风险分析）</span>
+                <span>{t.includeRisk}</span>
               </label>
               
               <label className="checkbox-label">
@@ -233,7 +322,7 @@ function App() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                 />
-                <span>包含市场情绪评估（Social Analysis）</span>
+                <span>{t.includeSentiment}</span>
               </label>
 
               <label className="checkbox-label">
@@ -244,24 +333,24 @@ function App() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                 />
-                <span>包含新闻分析（News Analysis）</span>
+                <span>{t.includeNews}</span>
               </label>
             </div>
 
             <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? '分析中...' : '提交分析请求'}
+              {isSubmitting ? t.submitting : t.submit}
             </button>
           </form>
 
           {analysisStatus && (
             <div className="result-banner success">
-              <strong>状态：{analysisStatus.status === 'queued' ? '排队中' : analysisStatus.status === 'running' ? '分析中' : analysisStatus.status}</strong>
+              <strong>{t.status}：{t[analysisStatus.status] || analysisStatus.status}</strong>
               <br />
-              股票：{analysisStatus.symbol} ({analysisStatus.market})
+              {t.symbol}：{analysisStatus.symbol} ({analysisStatus.market})
               {analysisStatus.started_at && (
                 <>
                   <br />
-                  开始时间：{new Date(analysisStatus.started_at).toLocaleString('zh-CN')}
+                  {t.startedAt}：{new Date(analysisStatus.started_at).toLocaleString(uiLanguage === 'Chinese' ? 'zh-CN' : 'en-US')}
                 </>
               )}
             </div>

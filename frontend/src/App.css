@@ -164,3 +164,27 @@ button[type='submit']:disabled {
     padding: 1.5rem;
   }
 }
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.language-selector select {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(27, 93, 173, 0.2);
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-size: 0.9rem;
+  color: #0b2b50;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.language-selector select:focus {
+  outline: none;
+  border-color: #1b5dad;
+  box-shadow: 0 0 0 2px rgba(27, 93, 173, 0.1);
+}
